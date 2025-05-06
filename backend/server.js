@@ -5,13 +5,14 @@ require("dotenv").config();
 const regRoute = require('./routes/reg');
 const app = express();
 const loginroute = require('./routes/login');
+const user = require('./routes/userAuth');
 
 // Middleware
 app.use(cors());
 app.use(express.json()); // JSON parser
 app.use('/api',regRoute);
 app.use('/api',loginroute);
-
+app.use('/api',user);
 // Connect Database
 connectDB();
 

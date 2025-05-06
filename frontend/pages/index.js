@@ -39,6 +39,9 @@ export default function Home() {
       const { name, email, password } = values;
       const body = { name, email, password };
       const data = await registerUser(body);
+      if (data.token) {
+        localStorage.setItem("authToken", data.token);
+      }
       toast.success(data.message || "Registered successfully!");
       resetForm();
       router.push("/dashboard");

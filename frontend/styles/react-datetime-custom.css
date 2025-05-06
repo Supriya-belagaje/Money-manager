@@ -1,0 +1,30 @@
+/* react-datetime calendar custom styles */
+.rd-container {
+    background-color: #ffffff !important;
+    color: #1f2937 !important; /* Tailwind's gray-800 */
+    border: 1px solid #d1d5db !important; /* gray-300 */
+    z-index: 9999 !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .rd-day,
+  .rd-month,
+  .rd-time,
+  .rd-year {
+    color: #1f2937 !important;
+  }
+  
+  .rd-day:hover {
+    background-color: #e0e7ff !important; /* indigo-100 */
+  }
+  
+  .rd-selected {
+    background-color: #4f46e5 !important; /* indigo-600 */
+    color: white !important;
+  }
+  
+  .rd-input {
+    color: #1f2937 !important; /* text color */
+    background-color: #ffffff !important; /* ensure visible input */
+  }
+  
