@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Tabs,
   TabsContent,
@@ -15,157 +15,326 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import Sidebar from "../components/sidebar/Sidebar";
 import Navbar from "@/components/navbar/navbar";
 
-
-
 const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [transactions, setTransactions] = useState([]);
+  const [summary, setSummary] = useState({ income: 0, expenses: 0, balance: 0 });
 
-  const dailyData = [
-    { time: "9 AM", amount: 200 },
-    { time: "12 PM", amount: 400 },
-    { time: "3 PM", amount: 300 },
-    { time: "6 PM", amount: 500 },
-    { time: "9 PM", amount: 200 },
-  ];
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        const res = await fetch("http://localhost:5000/api/transactions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-  const monthlyData = [
-    { date: "1st", amount: 2000 },
-    { date: "5th", amount: 4000 },
-    { date: "10th", amount: 3000 },
-    { date: "15th", amount: 5000 },
-    { date: "20th", amount: 2000 },
-  ];
+        if (!res.ok) throw new Error("Failed to fetch");
 
-  const yearlyData = [
-    { month: "Jan", amount: 20000 },
-    { month: "Feb", amount: 24000 },
-    { month: "Mar", amount: 21000 },
-    { month: "Apr", amount: 25000 },
-    { month: "May", amount: 22000 },
-  ];
+        const json = await res.json();
+        setTransactions(json.transactions || []);
+        processSummary(json.transactions || []);
+      } catch (err) {
+        console.error("Fetch failed", err);
+      }
+    };
 
-  const summary = {
-    income: 100000,
-    expenses: 70000,
-    balance: 30000,
+    fetchTransactions();
+  }, []);
+
+  const processSummary = (txns) => {
+    let income = 0,
+      expenses = 0;
+    txns.forEach((txn) => {
+      if (txn.type === "income") income += txn.amount;
+      else expenses += txn.amount;
+    });
+    setSummary({
+      income,
+      expenses,
+      balance: income - expenses,
+    });
   };
+
+  const groupByDateAndType = (txns, keyFn) => {
+    const grouped = {};
+    txns.forEach((txn) => {
+      const key = keyFn(txn);
+      if (!grouped[key]) grouped[key] = { income: 0, expense: 0 };
+      if (txn.type === "income") grouped[key].income += txn.amount;
+      else grouped[key].expense += txn.amount;
+    });
+    return grouped;
+  };
+
+  const formatDate = (d) => {
+    const dateObj = new Date(d);
+    if (isNaN(dateObj)) return "Invalid Date";
+    return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(dateObj.getDate()).padStart(2, "0")}`;
+  };
+
+  const selectedDateStr = formatDate(selectedDate);
+
+  const getAllDaysInMonth = (year, month) => {
+    const days = [];
+    const totalDays = new Date(year, month, 0).getDate();
+    for (let i = 1; i <= totalDays; i++) {
+      days.push(i);
+    }
+    return days;
+  };
+
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
+  const dailyData = Object.entries(
+    groupByDateAndType(
+      transactions.filter((t) => formatDate(t.datetime) === selectedDateStr),
+      (t) => formatDate(t.datetime)
+    )
+  )
+    .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+    .map(([time, { income, expense }]) => ({ time, income, expense }));
+
+  const monthlyRawData = groupByDateAndType(
+    transactions.filter(
+      (t) =>
+        new Date(t.datetime).getFullYear() === selectedYear &&
+        new Date(t.datetime).getMonth() === selectedMonth - 1
+    ),
+    (t) => new Date(t.datetime).getDate()
+  );
+
+  const monthlyData = getAllDaysInMonth(selectedYear, selectedMonth).map((day) => ({
+    day,
+    income: monthlyRawData[day]?.income || 0,
+    expense: monthlyRawData[day]?.expense || 0,
+  }));
+
+  const yearlyRawData = groupByDateAndType(
+    transactions.filter((t) => new Date(t.datetime).getFullYear() === selectedYear),
+    (t) => new Date(t.datetime).getMonth()
+  );
+
+  const yearlyData = monthNames.map((monthName, index) => ({
+    month: monthName,
+    income: yearlyRawData[index]?.income || 0,
+    expense: yearlyRawData[index]?.expense || 0,
+  }));
+
+  // Pie chart data
+  const pieData = [
+    { name: "Income", value: summary.income },
+    { name: "Expenses", value: summary.expenses },
+    { name: "Balance", value: summary.balance },
+  ];
+
+  const COLORS = ["#00a63e", "#c10007", "#1447e6"]; // Green, Red, Blue for income, expense, balance
 
   return (
     <>
-    <Navbar />
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      <main className="flex-1 px-8 py-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h2>
+      <Navbar />
+      <div className="flex min-h-screen bg-gradient-to-br from-blue-100 via-white to-green-100">
+        <Sidebar />
+        <main className="flex-1 px-8 py-6">
+          <h2 className="text-3xl font-extrabold text-gray-800 mb-6 tracking-tight">
+            📊 Dashboard Overview
+          </h2>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Select Date:
-          </label>
-          <DatePicker
-            selected={selectedDate}
-            onChange={(date) => setSelectedDate(date)}
-            className="w-full max-w-xs border border-gray-300 rounded-md p-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        
+          <Tabs defaultValue="daily" className="w-full">
+            <TabsList className="grid grid-cols-4 bg-white border border-gray-300 rounded-lg overflow-hidden mb-6 shadow-md">
+              {["daily", "monthly", "yearly", "total"].map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab}
+                  className="text-center text-sm font-medium py-2 px-4 transition-colors duration-200 hover:bg-blue-100 hover:text-black data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-800"
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-        <Tabs defaultValue="daily" className="w-full">
-          <TabsList className="grid grid-cols-4 bg-white border border-gray-300 rounded-lg overflow-hidden mb-6 shadow-sm">
-            {["daily", "monthly", "yearly", "total"].map((tab) => (
-              <TabsTrigger
-  key={tab}
-  value={tab}
-  className="text-center text-sm font-medium py-2 px-4 transition-colors duration-200 ease-in-out hover:bg-blue-100 hover:text-black data-[state=active]:bg-blue-600 data-[state=active]:text-black text-gray-800"
->
-  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-</TabsTrigger>
-
-            ))}
-          </TabsList>
-
-          <TabsContent value="daily">
-            <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#3b82f6"
-                    fill="#bfdbfe"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="monthly">
-            <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#10b981"
-                    fill="#6ee7b7"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="yearly">
-            <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={yearlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#f59e0b"
-                    fill="#fde68a"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="total">
-            <Card className="p-6 bg-white border border-gray-200 shadow rounded-lg">
-              <h3 className="text-xl font-semibold mb-3 text-gray-800">Total Summary</h3>
-              <div className="space-y-2 text-sm">
-                <p className="text-green-600 font-medium">
-                  Income: ₹{summary.income.toLocaleString()}
-                </p>
-                <p className="text-red-600 font-medium">
-                  Expenses: ₹{summary.expenses.toLocaleString()}
-                </p>
-                <p className="text-blue-700 font-bold text-base">
-                  Balance: ₹{summary.balance.toLocaleString()}
-                </p>
+            {/* DAILY */}
+            <TabsContent value="daily">
+              <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                <DatePicker
+                  selected={selectedDate}
+                  onChange={(date) => setSelectedDate(date)}
+                  className="w-full max-w-xs border border-blue-300 rounded-md p-2 text-black shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={dailyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="time" />
+                    <YAxis />
+                    <Tooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="income"
+                      stroke="#16a34a"
+                      fillOpacity={0.5}
+                      fill="#bbf7d0"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="expense"
+                      stroke="#dc2626"
+                      fillOpacity={0.5}
+                      fill="#fecaca"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+            </TabsContent>
+
+            {/* MONTHLY */}
+            <TabsContent value="monthly">
+              <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="w-full max-w-xs border border-blue-300 rounded-md p-2 text-black shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  <option value="">Select Month</option>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i} value={i + 1}>
+                      {new Date(0, i).toLocaleString("default", { month: "long" })}
+                    </option>
+                  ))}
+                </select>
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="income"
+                      stroke="#16a34a"
+                      fillOpacity={0.5}
+                      fill="#bbf7d0"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="expense"
+                      stroke="#dc2626"
+                      fillOpacity={0.5}
+                      fill="#fecaca"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </TabsContent>
+
+            {/* YEARLY */}
+            <TabsContent value="yearly">
+              <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="w-full max-w-xs border border-blue-300 rounded-md p-2 text-black shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <option key={i} value={new Date().getFullYear() - i}>
+                      {new Date().getFullYear() - i}
+                    </option>
+                  ))}
+                </select>
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={yearlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="income"
+                      stroke="#16a34a"
+                      fillOpacity={0.5}
+                      fill="#bbf7d0"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="expense"
+                      stroke="#dc2626"
+                      fillOpacity={0.5}
+                      fill="#fecaca"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </TabsContent>
+
+            {/* TOTAL SUMMARY (PIE CHART WITH DETAILS) */}
+            <TabsContent value="total">
+              <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6">Total Overview</h3>
+
+                {/* Income, Expense, Balance Blocks */}
+                <div className="flex space-x-4 mb-6">
+                  <div className="w-1/3 p-4 bg-green-100 border border-green-300 rounded-lg shadow-md">
+                    <h4 className="text-lg font-semibold text-green-700">Income</h4>
+                    <p className="text-xl font-bold text-green-900">₹{summary.income}</p>
+                  </div>
+                  <div className="w-1/3 p-4 bg-red-100 border border-red-300 rounded-lg shadow-md">
+                    <h4 className="text-lg font-semibold text-red-700">Expenses</h4>
+                    <p className="text-xl font-bold text-red-900">₹{summary.expenses}</p>
+                  </div>
+                  <div className="w-1/3 p-4 bg-blue-100 border border-blue-300 rounded-lg shadow-md">
+                    <h4 className="text-lg font-semibold text-blue-700">Balance</h4>
+                    <p className="text-xl font-bold text-blue-900">₹{summary.balance}</p>
+                  </div>
+                </div>
+
+                {/* Pie Chart */}
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                    
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) =>
+                        `${name}: ${(percent * 100).toFixed(0)}%`
+                         }
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend/>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </>
   );
 };
+
 export default Dashboard;

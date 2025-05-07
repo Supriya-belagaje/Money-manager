@@ -12,7 +12,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`${sidebarColor} w-64 h-screen border-r p-4 flex flex-col space-y-4 transition-colors duration-300`}
+      className={`${sidebarColor} w-64 border-r p-4 flex flex-col space-y-4 transition-colors duration-300`}
     >
       <Button variant="outline" asChild>
         <Link href="/dashboard">
