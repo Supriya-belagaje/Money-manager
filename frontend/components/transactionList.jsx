@@ -1,55 +1,69 @@
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
-import moment from "moment";
+import { Button } from "@/components/ui/button";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Pencil } from "lucide-react";
 
+export default function TransactionList({ transactions, onEdit, onDelete }) {
+  if (!transactions || transactions.length === 0) {
+    return <p className="text-gray-500">No transactions found.</p>;
+  }
 
-const categoryColors = {
-  Food: "bg-red-100 text-red-600",
-  Household: "bg-yellow-100 text-yellow-700",
-  Other: "bg-blue-100 text-blue-600",
-};
-
-const TransactionList = ({ transactions }) => {
   return (
-    <div className="grid gap-4">
-      {transactions?.map((tx) => {
-        const isExpense = tx.type === "expense";
-        const sign = isExpense ? "-" : "+";
-        const color = isExpense ? "text-red-500" : "text-green-600";
+    <div className="mt-4 space-y-4">
+      {transactions.map((tx) => (
+        <div
+          key={tx._id}
+          className="flex justify-between items-center border p-4 rounded-lg bg-white shadow"
+        >
+          {/* Left Side */}
+          <div className="flex items-start gap-4">
+            {tx.type === "income" ? (
+              <ArrowUpCircle className="text-green-500" />
+            ) : (
+              <ArrowDownCircle className="text-red-500" />
+            )}
+            <div>
+              <p
+                className={`font-semibold ${
+                  tx.type === "income" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {tx.type === "income" ? "+" : "-"}₹{tx.amount}
+              </p>
+              <p className="text-sm text-gray-500">
+                {new Date(tx.datetime).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                Category: <span className="font-medium">{tx.category}</span>
+              </p>
+              {tx.note && (
+                <p className="text-xs text-gray-500 italic">Note: {tx.note}</p>
+              )}
+            </div>
+          </div>
 
-        return (
-          <Card key={tx._id} className="hover:shadow-lg transition duration-300 rounded-2xl">
-            <CardContent className="flex justify-between items-center p-4">
-              <div className="flex items-center gap-4">
-                {isExpense ? (
-                  <ArrowDownCircle className={`w-6 h-6 ${color}`} />
-                ) : (
-                  <ArrowUpCircle className={`w-6 h-6 ${color}`} />
-                )}
-                <div>
-                  <div className="text-lg font-semibold">{sign}₹{tx.amount}</div>
-                  <p className="text-sm text-muted-foreground">
-                    {moment(tx.datetime).format("DD MMM YYYY")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <Badge className={categoryColors[tx.category] || "bg-gray-100 text-gray-600"}>
-                  {tx.category}
-                </Badge>
-                {tx.note && (
-                  <p className="text-xs text-muted-foreground mt-1 italic">{tx.note}</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+          {/* Right Side Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              size="icon"
+              variant="secondary"
+              onClick={() => onEdit(tx)}
+              className="text-blue-600 border border-blue-300 hover:bg-blue-100"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="destructive"
+              onClick={() => onDelete(tx._id)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
-};
-
-export default TransactionList;
+}

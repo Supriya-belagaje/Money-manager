@@ -105,7 +105,7 @@
 //                 type,
 //               }}
 //                 validationSchema={TransactionSchema}
-//                 onSubmit={async (values, { resetForm }) => {
+//                 on={async (values, { resetForm }) => {
 //                   await addTransaction(values);
 //                   onSubmit(values);
 //                   resetForm();
@@ -213,8 +213,6 @@ import {
 import { CalendarIcon } from "lucide-react";
 import Datetime from "react-datetime";
 import "react-datetime/css/react-datetime.css";
-import { addTransaction } from "../../utils/addTransaction";
-
 
 const TransactionSchema = Yup.object().shape({
   amount: Yup.number().required("Amount is required"),
@@ -296,23 +294,33 @@ const CategorySelect = ({ field, form }) => {
   );
 };
 
-export default function TransactionForm({ onSubmit }) {
+export default function TransactionForm({ initialValues, isEditing = false, onSubmit }) {
+  const defaultValues = {
+    amount: "",
+    category: "",
+    note: "",
+    datetime: "",
+    type: "expense",
+  };
+
+  const formValues = initialValues || defaultValues;
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-          Add Transaction
+          {isEditing ? "Edit Transaction" : "Add Transaction"}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-w-md bg-white rounded-2xl shadow-2xl p-6 border-none">
         <DialogHeader>
           <DialogTitle className="text-2xl font-extrabold text-indigo-600 text-center">
-            Add Income or Expense
+            {isEditing ? "Edit Transaction" : "Add Income or Expense"}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="expense" className="mt-6 w-full">
+        <Tabs defaultValue={formValues.type || "expense"} className="mt-6 w-full">
           <TabsList className="grid grid-cols-2 bg-indigo-100 rounded-md overflow-hidden mb-6">
             <TabsTrigger
               value="expense"
@@ -331,17 +339,11 @@ export default function TransactionForm({ onSubmit }) {
           {["expense", "income"].map((type) => (
             <TabsContent key={type} value={type}>
               <Formik
-                initialValues={{
-                  amount: "",
-                  category: "",
-                  note: "",
-                  datetime: "",
-                  type,
-                }}
+                enableReinitialize
+                initialValues={{ ...formValues, type }}
                 validationSchema={TransactionSchema}
                 onSubmit={async (values, { resetForm }) => {
-                  await addTransaction(values);
-                  onSubmit(values);
+                  await onSubmit(values, isEditing); // parent handles POST or PATCH
                   resetForm();
                 }}
               >
@@ -383,35 +385,34 @@ export default function TransactionForm({ onSubmit }) {
 
                   {/* Date & Time */}
                   <div className="relative z-50">
-  <CalendarIcon className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
-  <Field name="datetime">
-    {({ field, form }) => (
-      <Datetime
-        {...field}
-        onChange={(value) => form.setFieldValue("datetime", value)}
-        value={field.value}
-        inputProps={{
-          placeholder: "Select Date & Time",
-          className:
-            "pl-10 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full",
-        }}
-      />
-    )}
-  </Field>
-  <ErrorMessage
-    name="datetime"
-    component="div"
-    className="text-red-500 text-xs mt-1"
-  />
-</div>
-
+                    <CalendarIcon className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
+                    <Field name="datetime">
+                      {({ field, form }) => (
+                        <Datetime
+                          {...field}
+                          onChange={(value) => form.setFieldValue("datetime", value)}
+                          value={field.value}
+                          inputProps={{
+                            placeholder: "Select Date & Time",
+                            className:
+                              "pl-10 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full",
+                          }}
+                        />
+                      )}
+                    </Field>
+                    <ErrorMessage
+                      name="datetime"
+                      component="div"
+                      className="text-red-500 text-xs mt-1"
+                    />
+                  </div>
 
                   {/* Submit Button */}
                   <Button
                     type="submit"
                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
                   >
-                    Add {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {isEditing ? "Update Transaction" : `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`}
                   </Button>
                 </Form>
               </Formik>
