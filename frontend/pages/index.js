@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,15 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { loginUser, registerUser } from "@/service/auth";
 import { toast } from "react-toastify";
+import { Eye, EyeOff } from "lucide-react"; // or use any icon library you prefer
+
 
 export default function Home() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
+  const loginFormRef = useRef(null);
+  const registerFormRef = useRef(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -39,6 +44,9 @@ export default function Home() {
       const { name, email, password } = values;
       const body = { name, email, password };
       const data = await registerUser(body);
+      if (data.token) {
+        localStorage.setItem("authToken", data.token);
+      }
       toast.success(data.message || "Registered successfully!");
       resetForm();
       router.push("/dashboard");
@@ -96,13 +104,21 @@ export default function Home() {
                       <ErrorMessage name="email" component="div" className="text-red-500 text-xs mt-1" />
                     </div>
                     <div>
-                      <Field
-                        as={Input}
-                        name="password"
-                        type="password"
-                        placeholder="Password"
-                        className="focus:ring-indigo-400"
-                      />
+                      <div className="relative">
+                        <Field
+                          as={Input}
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          className="focus:ring-indigo-400 pr-10"
+                        />
+                        <div
+                          className="absolute inset-y-0 right-2 flex items-center cursor-pointer text-gray-500"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </div>
+                      </div>
                       <ErrorMessage name="password" component="div" className="text-red-500 text-xs mt-1" />
                     </div>
                     <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={isSubmitting}>
@@ -123,11 +139,12 @@ export default function Home() {
             <>
               {/* Register Form */}
               <Formik
+                innerRef={registerFormRef}
                 initialValues={{ name: "", email: "", password: "", confirmPassword: "" }}
                 validationSchema={registerSchema}
                 onSubmit={handleRegister}
               >
-                {({ isSubmitting }) => (
+                {({ isSubmitting, resetForm }) => (
                   <Form className="space-y-4">
                     <div>
                       <Field
@@ -150,13 +167,21 @@ export default function Home() {
                       <ErrorMessage name="email" component="div" className="text-red-500 text-xs mt-1" />
                     </div>
                     <div>
-                      <Field
-                        as={Input}
-                        name="password"
-                        type="password"
-                        placeholder="Password"
-                        className="focus:ring-indigo-400"
-                      />
+                      <div className="relative">
+                        <Field
+                          as={Input}
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          className="focus:ring-indigo-400 pr-10"
+                        />
+                        <div
+                          className="absolute inset-y-0 right-2 flex items-center cursor-pointer text-gray-500"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </div>
+                      </div>
                       <ErrorMessage name="password" component="div" className="text-red-500 text-xs mt-1" />
                     </div>
                     <div>
@@ -178,7 +203,10 @@ export default function Home() {
 
               <p className="text-sm text-center mt-4 text-gray-600">
                 Already have an account?{" "}
-                <button onClick={() => setIsLogin(true)} className="text-indigo-600 font-medium hover:underline">
+                <button onClick={() => {
+                  setIsLogin(true)
+                  registerFormRef.current?.resetForm(); // Reset register form
+                }} className="text-indigo-600 font-medium hover:underline">
                   Login
                 </button>
               </p>
