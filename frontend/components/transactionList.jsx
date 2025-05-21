@@ -50,7 +50,7 @@ export default function TransactionList({ transactions, onEdit, onDelete }) {
               size="icon"
               variant="secondary"
               onClick={() => onEdit(tx)}
-              className="text-blue-600 border border-blue-300 hover:bg-blue-100"
+              className="text-blue-600 border border-blue-300 hover:bg-blue-100 cursor-pointer"
             >
               <Pencil className="w-4 h-4" />
             </Button>
@@ -58,6 +58,7 @@ export default function TransactionList({ transactions, onEdit, onDelete }) {
               size="icon"
               variant="destructive"
               onClick={() => onDelete(tx._id)}
+              className={"cursor-pointer"}
             >
               <Trash2 className="w-4 h-4" />
             </Button>

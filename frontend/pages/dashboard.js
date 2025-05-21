@@ -308,7 +308,7 @@
 //                 <ResponsiveContainer width="100%" height={250}>
 //                   <PieChart>
 //                     <Pie
-                    
+
 //                       data={pieData}
 //                       cx="50%"
 //                       cy="50%"
@@ -476,7 +476,7 @@ const Dashboard = () => {
   const pieData = [
     { name: "Income", value: summary.income },
     { name: "Expenses", value: summary.expenses },
-    { name: "Balance", value: summary.balance },
+    // { name: "Balance", value: summary.balance },
   ];
 
   const COLORS = ["#22c55e", "#ef4444", "#3b82f6"];
@@ -484,35 +484,40 @@ const Dashboard = () => {
   return (
     <>
       <Navbar />
-      <div className="flex min-h-screen bg-gradient-to-br from-blue-100 via-white to-green-100">
+      <div className="flex min-h-screen bg-gray-100">
         <Sidebar />
         <main className="flex-1 p-6">
           <h2 className="text-4xl font-bold text-gray-900 mb-6">📈 Finance Dashboard</h2>
 
-          <Tabs defaultValue="daily" className="w-full">
-  <TabsList className="inline-flex items-center bg-white border border-gray-300 rounded-full p-1 mb-6 shadow-sm">
-  {["Daily", "Monthly", "Yearly", "Total"].map((tab) => (
-    <TabsTrigger
-      key={tab}
-      value={tab.toLowerCase()}
-      className="capitalize px-4 py-2 text-sm font-medium rounded-full text-gray-700 transition-all duration-300 ease-in-out 
-                 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md"
-    >
-      {tab}
-    </TabsTrigger>
-  ))}
-</TabsList>
+          <Tabs defaultValue="total" className="w-full ">
+            <TabsList className="inline-flex items-center bg-white border border-gray-300 rounded p-1 mb-6 shadow-sm">
+              {["Daily", "Monthly", "Yearly", "Total"].map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab.toLowerCase()}
+                  className="capitalize px-4 py-2 text-sm font-medium rounded text-gray-700 transition-all duration-300 ease-in-out 
+                 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md cursor-pointer hover:bg-indigo-100 hover:text-gray-900"
+                >
+                  {tab}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
 
 
 
             <TabsContent value="daily">
               <Card className="p-4">
-                <DatePicker
-                  selected={selectedDate}
-                  onChange={(date) => setSelectedDate(date)}
-                  className="mb-4 border border-blue-400 rounded p-2"
-                />
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Daily Data</h3>
+                  <div>
+                    <DatePicker
+                      selected={selectedDate}
+                      onChange={(date) => setSelectedDate(date)}
+                      className="border border-blue-400 rounded p-2"
+                    />
+                  </div>
+                </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={dailyData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -528,17 +533,22 @@ const Dashboard = () => {
 
             <TabsContent value="monthly">
               <Card className="p-4">
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="mb-4 border border-blue-400 rounded p-2"
-                >
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <option key={i} value={i + 1}>
-                      {monthNames[i]}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Monthly Data</h3>
+                  <div>
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                      className="mb-4 border border-blue-400 rounded p-2"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i} value={i + 1}>
+                          {monthNames[i]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -554,17 +564,22 @@ const Dashboard = () => {
 
             <TabsContent value="yearly">
               <Card className="p-4">
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="mb-4 border border-blue-400 rounded p-2"
-                >
-                  {Array.from({ length: 10 }, (_, i) => (
-                    <option key={i} value={new Date().getFullYear() - i}>
-                      {new Date().getFullYear() - i}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Monthly Data</h3>
+                  <div>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                      className="mb-4 border border-blue-400 rounded p-2"
+                    >
+                      {Array.from({ length: 10 }, (_, i) => (
+                        <option key={i} value={new Date().getFullYear() - i}>
+                          {new Date().getFullYear() - i}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={yearlyData}>
                     <CartesianGrid strokeDasharray="3 3" />

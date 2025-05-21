@@ -11,13 +11,16 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
+import { X } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function Transactions() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("daily");
 
   const [editTransaction, setEditTransaction] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -39,6 +42,7 @@ export default function Transactions() {
         setData(json);
       } catch (err) {
         setError("Failed to fetch transactions.");
+        
       } finally {
         setLoading(false);
       }
@@ -94,9 +98,12 @@ export default function Transactions() {
         ...prev,
         transactions: prev.transactions.filter((t) => t._id !== id),
       }));
+      toast.success(data.message || "Deleted successfully!");
     } catch (err) {
       console.error(err);
-      alert("Delete failed");
+      // alert("Delete failed");
+      toast.error(err.response?.data?.message || "Delete failed!");
+
     }
   };
 
@@ -141,9 +148,11 @@ export default function Transactions() {
 
       setEditTransaction(null);
       setShowForm(false);
+      toast.success(data.message || `Transaction ${isEditing ? `edited`:`added`} successfully!`);
     } catch (err) {
       console.error(err);
-      alert("Error saving transaction");
+      // alert("Error saving transaction");
+      toast.error(err.response?.data?.message || "Error saving transaction!");
     }
   };
 
@@ -159,37 +168,38 @@ export default function Transactions() {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Transactions</h2>
 
           <Card className="bg-white shadow-md border border-gray-200 p-6 rounded-lg">
-            {/* Form Button */}
-            <div className="w-full sm:w-1/3 mb-6">
-              <Button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                onClick={() => {
-                  setEditTransaction(null);
-                  setShowForm(true);
-                }}
-              >
-                Add Transaction
-              </Button>
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="mb-4">
-              <div className="inline-flex rounded-md shadow-sm bg-gray-200 overflow-hidden">
-                {["daily", "monthly", "yearly", "all"].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedFilter(type)}
-                    className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                      selectedFilter === type
-                        ? "bg-blue-700 text-white"
-                        : "text-gray-700 hover:bg-blue-100"
-                    }`}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
+            <div className="mb-4 display flex flex-col sm:flex-row items-center justify-between">
+              {/* Filter Tabs */}
+              <div className="mb-4">
+                <div className="inline-flex rounded-md shadow-sm bg-gray-200 overflow-hidden">
+                  {["daily", "monthly", "yearly", "all"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedFilter(type)}
+                      className={`px-4 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${selectedFilter === type
+                        ? "bg-indigo-700 text-white"
+                        : "text-gray-700 hover:bg-indigo-200"
+                        }`}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Form Button */}
+              <div className="w-full sm:w-1/3 mb-4 display flex justify-end">
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                  onClick={() => {
+                    setEditTransaction(null);
+                    setShowForm(true);
+                  }}
+                >
+                  Add Transaction
+                </Button>
               </div>
             </div>
+
 
             {/* Transaction List */}
             <TransactionList
@@ -200,18 +210,27 @@ export default function Transactions() {
 
             {/* Form Dialog */}
             <Dialog open={showForm} onOpenChange={setShowForm}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>{editTransaction ? "Edit Transaction" : "Add Transaction"}</DialogTitle>
-    </DialogHeader>
+              <DialogContent className="max-w-md bg-white rounded-2xl shadow-2xl p-6 border-none [&>button[data-radix-dialog-close]]:hidden">
+                {/* <DialogClose asChild>
+                  <button className="absolute top-4 right-4 text-red-500 hover:text-red-700">
+                    <X className="h-5 w-5" />
+                  </button>
+                </DialogClose> */}
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-extrabold text-indigo-600 text-center">
+                    {/* {editTransaction ? "Edit Transaction" : "Add Transaction"} */}
+                    {!!editTransaction ? "Edit Transaction" : "Add Income or Expense"}
 
-    <TransactionForm
-      isEditing={!!editTransaction}
-      initialValues={editTransaction}
-      onSubmit={handleFormSubmit}
-    />
-  </DialogContent>
-</Dialog>
+                  </DialogTitle>
+                </DialogHeader>
+
+                <TransactionForm
+                  isEditing={!!editTransaction}
+                  initialValues={editTransaction}
+                  onSubmit={handleFormSubmit}
+                />
+              </DialogContent>
+            </Dialog>
           </Card>
         </main>
       </div>

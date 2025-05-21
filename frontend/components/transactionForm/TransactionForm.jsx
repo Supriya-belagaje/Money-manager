@@ -222,7 +222,23 @@ const TransactionSchema = Yup.object().shape({
   type: Yup.string().required(),
 });
 
-const categoryOptions = [
+// const categoryOptions = [
+//   { value: "Food", label: "🍜 Food" },
+//   { value: "Social Life", label: "🧑‍🤝‍🧑 Social Life" },
+//   { value: "Pets", label: "🐶 Pets" },
+//   { value: "Transport", label: "🚖 Transport" },
+//   { value: "Culture", label: "🖼️ Culture" },
+//   { value: "Household", label: "🪑 Household" },
+//   { value: "Apparel", label: "🧥 Apparel" },
+//   { value: "Beauty", label: "💄 Beauty" },
+//   { value: "Health", label: "🧘 Health" },
+//   { value: "Education", label: "📙 Education" },
+//   { value: "Gift", label: "🎁 Gift" },
+//   { value: "Other", label: "❓ Other" },
+// ];
+
+
+const expenseCategoryOptions = [
   { value: "Food", label: "🍜 Food" },
   { value: "Social Life", label: "🧑‍🤝‍🧑 Social Life" },
   { value: "Pets", label: "🐶 Pets" },
@@ -237,19 +253,40 @@ const categoryOptions = [
   { value: "Other", label: "❓ Other" },
 ];
 
-const CategorySelect = ({ field, form }) => {
+const incomeCategoryOptions = [
+  { value: "Salary", label: "💼 Salary" },
+  { value: "Freelance", label: "🧑‍💻 Freelance" },
+  { value: "Investments", label: "📈 Investments" },
+  { value: "Gifts", label: "🎁 Gifts" },
+  { value: "Other", label: "❓ Other" },
+];
+
+
+const CategorySelect = ({ field, form, options }) => {
+  // const handleChange = (selectedOption) => {
+  //   form.setFieldValue(field.name, selectedOption.value);
+  // };
+
+  // const selectedOption = categoryOptions.find(
+  //   (option) => option.value === field.value
+  // );
+
+  // return (
+  //   <div className="space-y-1">
+  //     <Select
+  //       options={categoryOptions}
   const handleChange = (selectedOption) => {
     form.setFieldValue(field.name, selectedOption.value);
   };
 
-  const selectedOption = categoryOptions.find(
+  const selectedOption = options.find(
     (option) => option.value === field.value
   );
 
   return (
     <div className="space-y-1">
       <Select
-        options={categoryOptions}
+        options={options}
         onChange={handleChange}
         value={selectedOption}
         placeholder="Select a category"
@@ -303,123 +340,166 @@ export default function TransactionForm({ initialValues, isEditing = false, onSu
     type: "expense",
   };
 
-  const formValues = initialValues || defaultValues;
+  // const formValues = initialValues || defaultValues;
+  const formValues = {
+    ...(initialValues || defaultValues),
+    datetime: initialValues?.datetime ? new Date(initialValues.datetime) : "",
+  };
+
+
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-          {isEditing ? "Edit Transaction" : "Add Transaction"}
-        </Button>
-      </DialogTrigger>
 
-      <DialogContent className="max-w-md bg-white rounded-2xl shadow-2xl p-6 border-none">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-extrabold text-indigo-600 text-center">
-            {isEditing ? "Edit Transaction" : "Add Income or Expense"}
-          </DialogTitle>
-        </DialogHeader>
 
-        <Tabs defaultValue={formValues.type || "expense"} className="mt-6 w-full">
-          <TabsList className="grid grid-cols-2 bg-indigo-100 rounded-md overflow-hidden mb-6">
-            <TabsTrigger
-              value="expense"
-              className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-indigo-600 font-semibold py-2"
-            >
-              Expense
-            </TabsTrigger>
-            <TabsTrigger
-              value="income"
-              className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-indigo-600 font-semibold py-2"
-            >
-              Income
-            </TabsTrigger>
-          </TabsList>
+    <Tabs defaultValue={formValues.type || "expense"} className="mt-6 w-full">
+      {/* <TabsList className="grid grid-cols-2 bg-indigo-100 rounded-md overflow-hidden mb-6">
+        <TabsTrigger
+          value="expense"
+          className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-indigo-600 font-semibold py-2"
+        >
+          Expense
+        </TabsTrigger>
+        <TabsTrigger
+          value="income"
+          className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-indigo-600 font-semibold py-2"
+        >
+          Income
+        </TabsTrigger>
+      </TabsList> */}
+      <TabsList className="grid grid-cols-2 w-full bg-indigo-100 rounded-md overflow-hidden mb-3 p-0 border border-indigo-200" style={{ height: "40px" }}>
+        <TabsTrigger
+          value="expense"
+          className="w-full text-center data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-indigo-600 font-semibold py-2 px-4 transition-colors duration-200  cursor-pointer"
+        >
+          Expense
+        </TabsTrigger>
+        <TabsTrigger
+          value="income"
+          className="w-full text-center data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-indigo-600 font-semibold py-2 px-4 transition-colors duration-200 cursor-pointer"
+        >
+          Income
+        </TabsTrigger>
+      </TabsList>
 
-          {["expense", "income"].map((type) => (
-            <TabsContent key={type} value={type}>
-              <Formik
-                enableReinitialize
-                initialValues={{ ...formValues, type }}
-                validationSchema={TransactionSchema}
-                onSubmit={async (values, { resetForm }) => {
-                  await onSubmit(values, isEditing); // parent handles POST or PATCH
-                  resetForm();
-                }}
+      {["expense", "income"].map((type) => (
+        <TabsContent key={type} value={type}>
+          <Formik
+            enableReinitialize
+            initialValues={{ ...formValues, type }}
+            validationSchema={TransactionSchema}
+            onSubmit={async (values, { resetForm }) => {
+              await onSubmit(values, isEditing); // parent handles POST or PATCH
+              resetForm();
+            }}
+          >
+            <Form className="space-y-4">
+              {/* Amount */}
+              <div>
+                <Field
+                  as={Input}
+                  type="number"
+                  name="amount"
+                  placeholder="Amount"
+                  className="text-gray-900 placeholder-gray-500 focus:ring-indigo-400"
+                />
+                <ErrorMessage
+                  name="amount"
+                  component="div"
+                  className="text-red-500 text-xs mt-1"
+                />
+              </div>
+
+              {/* Category Field */}
+              <Field
+                name="category"
+                component={({ field, form }) => (
+                  <CategorySelect
+                    field={field}
+                    form={form}
+                    options={type === "income" ? incomeCategoryOptions : expenseCategoryOptions}
+                  />
+                )}
+
+                className="text-gray-900 placeholder-gray-500 focus:ring-indigo-400"
+              />
+
+              {/* Note */}
+              <div>
+                <Field
+                  as={Input}
+                  type="text"
+                  name="note"
+                  placeholder="Note (optional)"
+                  className="text-gray-900 placeholder-gray-500 focus:ring-indigo-400"
+                />
+                <ErrorMessage
+                  name="note"
+                  component="div"
+                  className="text-red-500 text-xs mt-1"
+                />
+              </div>
+
+              {/* Date & Time */}
+              <div className="relative z-50">
+                <CalendarIcon className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
+                <Field name="datetime">
+                  {({ field, form }) => (
+                    // <Datetime
+                    //   {...field}
+                    //   onChange={(value) => form.setFieldValue("datetime", value)}
+                    //   value={field.value}
+                    //   // inputProps={{
+                    //   //   placeholder: "Select Date & Time",
+                    //   //   className:
+                    //   //     "pl-10 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full",
+                    //   // }}
+                    //   inputProps={{
+                    //     style: {
+                    //       height: "36px",
+                    //     },
+                    //     // calendarIcon: <CalendarIcon className="absolute left-3 top-3 text-gray-400 w-4 h-4" />,
+                    //     // timeIcon: <ClockIcon className="absolute left-3 top-3 text-gray-400 w-4 h-4" />,
+                    //     placeholder: "Select Date & Time",
+                    //     className: " pl-10 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full",
+                    //   }}
+
+                    // />
+                    <div className="relative">
+                      <Datetime
+                        {...field}
+                        onChange={(value) => form.setFieldValue("datetime", value)}
+                        value={field.value}
+                        inputProps={{
+                          placeholder: "Select Date & Time",
+                          className:
+                            "pl-3 pr-10 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full",
+                          style: {
+                            height: "36px",
+                          },
+                        }}
+                      />
+                      <CalendarIcon className="absolute right-3 top-2.5 text-gray-400 w-4 h-4 pointer-events-none" />
+                    </div>
+                  )}
+                </Field>
+                <ErrorMessage
+                  name="datetime"
+                  component="div"
+                  className="text-red-500 text-xs mt-1"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold cursor-pointer"
               >
-                <Form className="space-y-4">
-                  {/* Amount */}
-                  <div>
-                    <Field
-                      as={Input}
-                      type="number"
-                      name="amount"
-                      placeholder="Amount"
-                      className="text-gray-900 placeholder-gray-500 focus:ring-indigo-400"
-                    />
-                    <ErrorMessage
-                      name="amount"
-                      component="div"
-                      className="text-red-500 text-xs mt-1"
-                    />
-                  </div>
-
-                  {/* Category Field */}
-                  <Field name="category" component={CategorySelect} />
-
-                  {/* Note */}
-                  <div>
-                    <Field
-                      as={Input}
-                      type="text"
-                      name="note"
-                      placeholder="Note (optional)"
-                      className="text-gray-900 placeholder-gray-500 focus:ring-indigo-400"
-                    />
-                    <ErrorMessage
-                      name="note"
-                      component="div"
-                      className="text-red-500 text-xs mt-1"
-                    />
-                  </div>
-
-                  {/* Date & Time */}
-                  <div className="relative z-50">
-                    <CalendarIcon className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
-                    <Field name="datetime">
-                      {({ field, form }) => (
-                        <Datetime
-                          {...field}
-                          onChange={(value) => form.setFieldValue("datetime", value)}
-                          value={field.value}
-                          inputProps={{
-                            placeholder: "Select Date & Time",
-                            className:
-                              "pl-10 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full",
-                          }}
-                        />
-                      )}
-                    </Field>
-                    <ErrorMessage
-                      name="datetime"
-                      component="div"
-                      className="text-red-500 text-xs mt-1"
-                    />
-                  </div>
-
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-                  >
-                    {isEditing ? "Update Transaction" : `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`}
-                  </Button>
-                </Form>
-              </Formik>
-            </TabsContent>
-          ))}
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+                {isEditing ? "Update Transaction" : `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`}
+              </Button>
+            </Form>
+          </Formik>
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
